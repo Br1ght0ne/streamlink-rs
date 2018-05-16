@@ -239,8 +239,8 @@ mod tests {
     }
 
     mod stream {
-        use ::*;
         use super::constants;
+        use *;
 
         pub fn stream(s: &str) -> Stream {
             Stream::from_str(s).expect("wrong str")
