@@ -1,9 +1,13 @@
+extern crate console;
+extern crate indicatif;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate toml;
 extern crate url;
 
+use indicatif::ProgressBar;
+use console::style;
 use std::fmt;
 use std::io;
 use std::path::Path;
@@ -176,9 +180,21 @@ impl Streamlink {
 
 pub fn run<P: AsRef<Path>>(config_path: P) {
     let config = Config::new(config_path).expect("error while reading config");
+    let bar = ProgressBar::new(config.stream_urls.len() as u64);
     let streamlink = Streamlink::from_strings(&config.stream_urls).unwrap();
-    for (url, status) in streamlink.status() {
-        println!("{} is {}", url, status);
+    let status = streamlink.status();
+    let lines: Vec<String> = status
+        .map(|(url, status)| {
+            bar.inc(1);
+            format!("{} is {}", url, match status {
+                StreamStatus::Offline => style(status).red(),
+                StreamStatus::Online => style(status).green(),
+            })
+        })
+        .collect();
+    bar.finish_and_clear();
+    for line in lines {
+        println!("{}", line);
     }
 }
 
