@@ -1,0 +1,11 @@
+[package]
+name = "streamlink"
+version = "0.1.0"
+authors = ["Oleksii Filonenko <brightone@protonmail.com>"]
+
+[dependencies]
+url = "~1.7.0"
+clap = "~2.31"
+serde = "~1.0.55"
+serde_derive = "~1.0.55"
+toml = "~0.4"
