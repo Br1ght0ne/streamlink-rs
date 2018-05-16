@@ -164,13 +164,13 @@ impl Streamlink {
         Ok(Self { urls })
     }
 
-    pub fn status(&self) -> Vec<(&Stream, StreamStatus)> {
+    pub fn status(&self) -> impl Iterator<Item = (&Stream, StreamStatus)>{
         let urls_iter = self.urls.iter();
         let statuses_iter = self
             .urls
             .iter()
             .map(|url| url.status().unwrap_or(StreamStatus::Offline));
-        urls_iter.zip(statuses_iter).collect()
+        urls_iter.zip(statuses_iter)
     }
 
     pub fn stream_urls(&self) -> &Vec<Stream> {
