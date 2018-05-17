@@ -280,14 +280,14 @@ mod tests {
         use super::constants;
         use *;
 
-        pub fn stream(s: &str) -> Stream {
+        pub fn stream_from_str(s: &str) -> Stream {
             Stream::from_str(s).expect("wrong str")
         }
 
         #[test]
         fn from_right_url_str() {
             // `Stream` can be created from a correct URL str.
-            stream(constants::TWITCH_GOGCOM);
+            stream_from_str(constants::TWITCH_GOGCOM);
         }
 
         #[test]
@@ -303,14 +303,14 @@ mod tests {
 
             #[test]
             fn twitch() {
-                assert_eq!("gogcom", stream(constants::TWITCH_GOGCOM).name().unwrap());
+                assert_eq!("gogcom", stream_from_str(constants::TWITCH_GOGCOM).name().unwrap());
             }
 
             #[test]
             fn youtube_user() {
                 assert_eq!(
                     "markiplierGAME",
-                    stream(constants::YOUTUBE_MARKIPLIERGAME_USER)
+                    stream_from_str(constants::YOUTUBE_MARKIPLIERGAME_USER)
                         .name()
                         .unwrap()
                 );
@@ -320,7 +320,7 @@ mod tests {
             fn youtube_direct() {
                 assert_eq!(
                     "markiplierGAME",
-                    stream(constants::YOUTUBE_MARKIPLIERGAME_DIRECT)
+                    stream_from_str(constants::YOUTUBE_MARKIPLIERGAME_DIRECT)
                         .name()
                         .unwrap()
                 );
@@ -329,34 +329,34 @@ mod tests {
             #[test]
             #[should_panic]
             fn other() {
-                stream(constants::OTHER_VALID).name();
+                stream_from_str(constants::OTHER_VALID).name();
             }
         }
     }
 
     mod status {
         use super::constants;
-        use super::stream::stream;
+        use super::stream::stream_from_str;
         use *;
 
-        pub fn status(s: &str) -> StreamStatus {
-            stream(s).status().expect("failed to get status")
+        pub fn status_from_str(s: &str) -> StreamStatus {
+            stream_from_str(s).status().expect("failed to get status")
         }
 
         #[test]
         fn can_get() {
             // `Stream.status()` works for valid URL strs.
-            status(constants::TWITCH_GOGCOM);
+            status_from_str(constants::TWITCH_GOGCOM);
         }
 
         #[test]
         fn always_offline() {
-            assert_eq!(StreamStatus::Offline, status(constants::ALWAYS_OFF_URL_STR));
+            assert_eq!(StreamStatus::Offline, status_from_str(constants::ALWAYS_OFF_URL_STR));
         }
 
         #[test]
         fn always_online() {
-            assert_eq!(StreamStatus::Online, status(constants::ALWAYS_ON_URL_STR));
+            assert_eq!(StreamStatus::Online, status_from_str(constants::ALWAYS_ON_URL_STR));
         }
     }
 }
