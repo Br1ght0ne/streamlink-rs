@@ -134,8 +134,8 @@ impl Stream {
     pub fn status(&self) -> Result<StreamStatus, io::Error> {
         let status: ExitStatus = Command::new("youtube-dl")
             .args(&["-F", self.url.as_str()])
-            // .stdout(Stdio::null())
-            // .stderr(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
             .status()?;
         let status = if status.success() {
             StreamStatus::Online
