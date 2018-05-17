@@ -1,6 +1,6 @@
 [package]
 name = "streamlink"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Oleksii Filonenko <brightone@protonmail.com>"]
 
 [dependencies]
