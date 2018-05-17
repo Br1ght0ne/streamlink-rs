@@ -1,6 +1,6 @@
 [package]
 name = "streamlink"
-version = "0.2.5"
+version = "0.2.6"
 authors = ["Oleksii Filonenko <brightone@protonmail.com>"]
 license = "GPL-3.0"
 readme = "README.md"
