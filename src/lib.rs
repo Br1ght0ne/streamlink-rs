@@ -1,3 +1,4 @@
+#![feature(conservative_impl_trait)]
 extern crate console;
 extern crate indicatif;
 extern crate serde;
@@ -173,18 +174,17 @@ impl Streamlink {
         Ok(Self::from_strings(config.stream_urls)?)
     }
 
-    pub fn from_strs(strs: &[&str]) -> Result<Self, UrlError> {
-        let urls: Vec<Url> = strs
-            .into_iter()
-            .map(|s| Url::parse(s).map_err(|_| UrlError::Malformed))
-            .map(|s| s.or_else(Err).unwrap())
-            .collect();
-        Ok(Self::from_urls(urls)?)
+    pub fn from_strs(strs: Vec<&str>) -> Result<Self, UrlError> {
+        Self::from_strings(strs.into_iter().map(String::from).collect())
     }
 
     pub fn from_strings(strings: Vec<String>) -> Result<Self, UrlError> {
-        let strs: Vec<&str> = strings.iter().map(|s| s.as_str()).collect();
-        Self::from_strs(&strs)
+        let urls: Vec<Url> = strings
+            .into_iter()
+            .map(|s| Url::parse(s.as_str()).map_err(|_| UrlError::Malformed))
+            .map(|s| s.or_else(Err).unwrap())
+            .collect();
+        Ok(Self::from_urls(urls)?)
     }
 
     pub fn from_urls(urls: Vec<Url>) -> Result<Self, UrlError> {
@@ -219,7 +219,7 @@ pub fn run<P: AsRef<Path>>(config_path: P) {
             progress_bar.inc(1);
             format!(
                 "{} is {}",
-                stream.name().unwrap_or(stream.url.as_str()),
+                stream.name().unwrap_or_else(|| stream.url.as_str()),
                 match status {
                     StreamStatus::Offline => style(status).red(),
                     StreamStatus::Online => style(status).green(),
@@ -303,7 +303,10 @@ mod tests {
 
             #[test]
             fn twitch() {
-                assert_eq!("gogcom", stream_from_str(constants::TWITCH_GOGCOM).name().unwrap());
+                assert_eq!(
+                    "gogcom",
+                    stream_from_str(constants::TWITCH_GOGCOM).name().unwrap()
+                );
             }
 
             #[test]
@@ -351,12 +354,18 @@ mod tests {
 
         #[test]
         fn always_offline() {
-            assert_eq!(StreamStatus::Offline, status_from_str(constants::ALWAYS_OFF_URL_STR));
+            assert_eq!(
+                StreamStatus::Offline,
+                status_from_str(constants::ALWAYS_OFF_URL_STR)
+            );
         }
 
         #[test]
         fn always_online() {
-            assert_eq!(StreamStatus::Online, status_from_str(constants::ALWAYS_ON_URL_STR));
+            assert_eq!(
+                StreamStatus::Online,
+                status_from_str(constants::ALWAYS_ON_URL_STR)
+            );
         }
     }
 }
