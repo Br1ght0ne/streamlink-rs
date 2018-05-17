@@ -6,8 +6,8 @@ extern crate serde_derive;
 extern crate toml;
 extern crate url;
 
-use indicatif::ProgressBar;
 use console::style;
+use indicatif::ProgressBar;
 use std::fmt;
 use std::io;
 use std::path::Path;
@@ -164,7 +164,7 @@ impl Streamlink {
         Ok(Self { urls })
     }
 
-    pub fn status(&self) -> impl Iterator<Item = (&Stream, StreamStatus)>{
+    pub fn status(&self) -> impl Iterator<Item = (&Stream, StreamStatus)> {
         let urls_iter = self.urls.iter();
         let statuses_iter = self
             .urls
@@ -180,19 +180,23 @@ impl Streamlink {
 
 pub fn run<P: AsRef<Path>>(config_path: P) {
     let config = Config::new(config_path).expect("error while reading config");
-    let bar = ProgressBar::new(config.stream_urls.len() as u64);
+    let progress_bar = ProgressBar::new(config.stream_urls.len() as u64);
     let streamlink = Streamlink::from_strings(&config.stream_urls).unwrap();
     let status = streamlink.status();
     let lines: Vec<String> = status
         .map(|(url, status)| {
-            bar.inc(1);
-            format!("{} is {}", url, match status {
-                StreamStatus::Offline => style(status).red(),
-                StreamStatus::Online => style(status).green(),
-            })
+            progress_bar.inc(1);
+            format!(
+                "{} is {}",
+                url,
+                match status {
+                    StreamStatus::Offline => style(status).red(),
+                    StreamStatus::Online => style(status).green(),
+                }
+            )
         })
         .collect();
-    bar.finish_and_clear();
+    progress_bar.finish_and_clear();
     for line in lines {
         println!("{}", line);
     }
