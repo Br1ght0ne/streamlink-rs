@@ -1,3 +1,4 @@
+#![feature(conservative_impl_trait)]
 extern crate console;
 extern crate indicatif;
 extern crate serde;
