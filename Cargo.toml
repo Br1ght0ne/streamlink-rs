@@ -1,7 +1,7 @@
 [package]
 name = "streamlink"
 description = "Rust API (kinda) for the streamlink utility."
-version = "0.2.2"
+version = "0.2.3"
 license = "GPL-3.0"
 repository = "https://github.com/filalex77/streamlink-rs"
 authors = ["Oleksii Filonenko <brightone@protonmail.com>"]
