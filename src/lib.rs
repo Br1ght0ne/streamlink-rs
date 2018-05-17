@@ -197,11 +197,11 @@ pub fn run<P: AsRef<Path>>(config_path: P) {
     let streamlink = Streamlink::from_strings(&config.stream_urls).unwrap();
     let status = streamlink.status();
     let lines: Vec<String> = status
-        .map(|(url, status)| {
+        .map(|(stream, status)| {
             progress_bar.inc(1);
             format!(
                 "{} is {}",
-                url,
+                stream.name().unwrap_or(stream.url.as_str()),
                 match status {
                     StreamStatus::Offline => style(status).red(),
                     StreamStatus::Online => style(status).green(),
