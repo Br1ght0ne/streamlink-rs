@@ -89,12 +89,13 @@ impl Stream {
     ///
     /// ```rust
     /// use streamlink::Stream;
+    /// use std::str::FromStr;
     ///
-    /// let stream = Stream::from_str("https://twitch.tv/gogcom");
-    /// assert_eq!("gogcom", stream.name());
+    /// let stream = Stream::from_str("https://twitch.tv/gogcom").unwrap();
+    /// assert_eq!("gogcom", stream.name().unwrap());
     ///
-    /// let stream = Stream::from_str("https://youtube.com/user/markiplierGAME");
-    /// assert_eq!("markiplierGAME", stream.name());
+    /// let stream = Stream::from_str("https://youtube.com/user/markiplierGAME").unwrap();
+    /// assert_eq!("markiplierGAME", stream.name().unwrap());
     /// ```
     pub fn name(&self) -> Option<&str> {
         let path = self.url.path();
