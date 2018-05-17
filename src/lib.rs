@@ -15,7 +15,7 @@ use std::process::{Command, ExitStatus, Stdio};
 use std::str::FromStr;
 use url::{Host, ParseError, Url};
 
-mod config;
+pub mod config;
 
 use config::Config;
 
