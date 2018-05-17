@@ -15,7 +15,7 @@ use std::process::{Command, ExitStatus, Stdio};
 use std::str::FromStr;
 use url::{Host, ParseError, Url};
 
-mod config;
+pub mod config;
 
 use config::Config;
 
@@ -139,7 +139,7 @@ impl fmt::Display for Stream {
 
 #[derive(Debug)]
 pub struct Streamlink {
-    urls: Vec<Stream>,
+    pub urls: Vec<Stream>,
 }
 
 impl Streamlink {
