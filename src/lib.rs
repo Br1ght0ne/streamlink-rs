@@ -55,7 +55,8 @@ impl<'a> From<&'a Url> for UrlKind {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+/// Represents a stream of a specific `kind` on a specific `url`.
+#[derive(Debug, PartialEq)]
 pub struct Stream {
     url: Url,
     kind: UrlKind,
@@ -82,6 +83,19 @@ impl Stream {
         }
     }
 
+    /// Returns the name (aka ID) of the stream.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use streamlink::Stream;
+    ///
+    /// let stream = Stream::from_str("https://twitch.tv/gogcom");
+    /// assert_eq!("gogcom", stream.name());
+    ///
+    /// let stream = Stream::from_str("https://youtube.com/user/markiplierGAME");
+    /// assert_eq!("markiplierGAME", stream.name());
+    /// ```
     pub fn name(&self) -> &str {
         self.url.path().split('/').next().unwrap()
     }
