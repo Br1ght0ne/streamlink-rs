@@ -143,7 +143,11 @@ pub struct Streamlink {
 }
 
 impl Streamlink {
-    pub fn from_strs(strs: Vec<&str>) -> Result<Self, UrlError> {
+    pub fn new(config: Config) -> Result<Self, UrlError> {
+        Ok(Self::from_strings(config.stream_urls)?)
+    }
+
+    pub fn from_strs(strs: &[&str]) -> Result<Self, UrlError> {
         let urls: Vec<Url> = strs
             .into_iter()
             .map(|s| Url::parse(s).map_err(|_| UrlError::Malformed))
@@ -152,10 +156,11 @@ impl Streamlink {
         Ok(Self::from_urls(urls)?)
     }
 
-    pub fn from_strings(strings: &[String]) -> Result<Self, UrlError> {
+    pub fn from_strings(strings: Vec<String>) -> Result<Self, UrlError> {
         let strs: Vec<&str> = strings.iter().map(|s| s.as_str()).collect();
-        Self::from_strs(strs)
+        Self::from_strs(&strs)
     }
+
     pub fn from_urls(urls: Vec<Url>) -> Result<Self, UrlError> {
         let urls: Vec<Stream> = urls
             .into_iter()
@@ -181,7 +186,7 @@ impl Streamlink {
 pub fn run<P: AsRef<Path>>(config_path: P) {
     let config = Config::new(config_path).expect("error while reading config");
     let progress_bar = ProgressBar::new(config.stream_urls.len() as u64);
-    let streamlink = Streamlink::from_strings(&config.stream_urls).unwrap();
+    let streamlink = Streamlink::new(config).unwrap();
     let status = streamlink.status();
     let lines: Vec<String> = status
         .map(|(url, status)| {
