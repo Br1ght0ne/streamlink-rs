@@ -1,8 +1,8 @@
 language: rust
-rust:
-  - nightly
-  - beta
-  - stable
+rust: nightly
+cache: cargo
+install:
+  - sudo pip install youtube-dl
 matrix:
   allow_failures:
     - rust:
