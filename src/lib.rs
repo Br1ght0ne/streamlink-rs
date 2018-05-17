@@ -139,7 +139,7 @@ impl fmt::Display for Stream {
 
 #[derive(Debug)]
 pub struct Streamlink {
-    urls: Vec<Stream>,
+    pub urls: Vec<Stream>,
 }
 
 impl Streamlink {
