@@ -1,0 +1,11 @@
+language: rust
+rust: nightly
+cache: cargo
+install:
+  - sudo pip install youtube-dl
+matrix:
+  allow_failures:
+    - rust:
+        - beta
+        - stable
+  fast_finish: true
