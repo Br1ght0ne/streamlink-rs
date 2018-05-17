@@ -5,8 +5,7 @@ rust:
   - stable
 cache: cargo
 install:
-  - sudo apt-get -qq update
-  - sudo apt-get install youtube-dl
+  - sudo pip install youtube-dl
 matrix:
   allow_failures:
     - rust:
