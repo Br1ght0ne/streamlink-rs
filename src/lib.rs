@@ -96,8 +96,19 @@ impl Stream {
     /// let stream = Stream::from_str("https://youtube.com/user/markiplierGAME");
     /// assert_eq!("markiplierGAME", stream.name());
     /// ```
-    pub fn name(&self) -> &str {
-        self.url.path().split('/').next().unwrap()
+    pub fn name(&self) -> Option<&str> {
+        let path = self.url.path();
+        let mut path_parts = path.split('/').skip(1);
+
+        match self.kind {
+            UrlKind::Twitch => path_parts.next(),
+            UrlKind::Youtube => match path_parts.next() {
+                Some("user") => path_parts.next(),
+                Some(id) => Some(id),
+                None => None,
+            },
+            UrlKind::Other => None,
+        }
     }
 
     // TODO: proper implementation
@@ -203,11 +214,11 @@ pub fn run<P: AsRef<Path>>(config_path: P) {
     let streamlink = Streamlink::new(config).unwrap();
     let status = streamlink.status();
     let lines: Vec<String> = status
-        .map(|(url, status)| {
+        .map(|(stream, status)| {
             progress_bar.inc(1);
             format!(
                 "{} is {}",
-                url,
+                stream.name().unwrap_or(stream.url.as_str()),
                 match status {
                     StreamStatus::Offline => style(status).red(),
                     StreamStatus::Online => style(status).green(),
@@ -225,7 +236,10 @@ pub fn run<P: AsRef<Path>>(config_path: P) {
 mod tests {
 
     mod constants {
-        pub const RIGHT_URL_STR: &str = "https://twitch.tv/gogcom";
+        pub const TWITCH_GOGCOM: &str = "https://twitch.tv/gogcom";
+        pub const YOUTUBE_MARKIPLIERGAME_USER: &str = "https://youtube.com/user/markiplierGAME";
+        pub const YOUTUBE_MARKIPLIERGAME_DIRECT: &str = "https://youtube.com/markiplierGAME";
+        pub const OTHER_VALID: &str = "https://rust-lang.org/about";
         pub const ALWAYS_OFF_URL_STR: &str = "https://twitch.tv/NotRealBrightOneLOL";
         pub const ALWAYS_ON_URL_STR: &str = "https://twitch.tv/food";
         pub const WRONG_URL_STR: &str = "wrong://fake.tv/thisdefinitelydoesntexist";
@@ -246,7 +260,7 @@ mod tests {
 
         #[test]
         fn twitch() {
-            assert_eq!(UrlKind::Twitch, kind(constants::RIGHT_URL_STR));
+            assert_eq!(UrlKind::Twitch, kind(constants::TWITCH_GOGCOM));
         }
 
         #[test]
@@ -272,15 +286,50 @@ mod tests {
         #[test]
         fn from_right_url_str() {
             // `Stream` can be created from a correct URL str.
-            stream(constants::RIGHT_URL_STR);
+            stream(constants::TWITCH_GOGCOM);
         }
 
         #[test]
         fn from_wrong_url_str() {
             // `Stream` can NOT be created from an incorrect URL str.
             Stream::from_str(constants::WRONG_URL_STR).expect_err("right str");
-            Stream::from_str(&constants::RIGHT_URL_STR.replace("https://", ""))
+            Stream::from_str(&constants::TWITCH_GOGCOM.replace("https://", ""))
                 .expect_err("right str");
+        }
+
+        mod name {
+            use super::*;
+
+            #[test]
+            fn twitch() {
+                assert_eq!("gogcom", stream(constants::TWITCH_GOGCOM).name().unwrap());
+            }
+
+            #[test]
+            fn youtube_user() {
+                assert_eq!(
+                    "markiplierGAME",
+                    stream(constants::YOUTUBE_MARKIPLIERGAME_USER)
+                        .name()
+                        .unwrap()
+                );
+            }
+
+            #[test]
+            fn youtube_direct() {
+                assert_eq!(
+                    "markiplierGAME",
+                    stream(constants::YOUTUBE_MARKIPLIERGAME_DIRECT)
+                        .name()
+                        .unwrap()
+                );
+            }
+
+            #[test]
+            #[should_panic]
+            fn other() {
+                stream(constants::OTHER_VALID).name();
+            }
         }
     }
 
@@ -296,7 +345,7 @@ mod tests {
         #[test]
         fn can_get() {
             // `Stream.status()` works for valid URL strs.
-            status(constants::RIGHT_URL_STR);
+            status(constants::TWITCH_GOGCOM);
         }
 
         #[test]
