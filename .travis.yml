@@ -4,6 +4,8 @@ rust:
   - beta
   - stable
 cache: cargo
+install:
+  - pip install youtube-dl
 matrix:
   allow_failures:
     - rust:
