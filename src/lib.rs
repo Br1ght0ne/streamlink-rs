@@ -16,9 +16,9 @@ use std::process::{Command, ExitStatus, Stdio};
 use std::str::FromStr;
 use url::{Host, ParseError, Url};
 
-pub mod config;
+mod config;
 
-use config::Config;
+pub use config::Config;
 
 #[derive(Debug, PartialEq, Eq)]
 enum UrlKind {
