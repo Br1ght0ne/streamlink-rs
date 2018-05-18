@@ -1,5 +1,8 @@
+#![recursion_limit = "1024"]
 #![feature(conservative_impl_trait)]
 extern crate console;
+#[macro_use]
+extern crate error_chain;
 extern crate indicatif;
 extern crate serde;
 #[macro_use]
@@ -10,15 +13,34 @@ extern crate url;
 use console::style;
 use indicatif::ProgressBar;
 use std::fmt;
-use std::io;
 use std::path::Path;
 use std::process::{Command, ExitStatus, Stdio};
-use std::str::FromStr;
-use url::{Host, ParseError, Url};
+use url::{Host, Url};
 
 mod config;
 
 pub use config::Config;
+
+mod errors {
+    error_chain! {
+        foreign_links {
+            Io(::std::io::Error);
+        }
+
+        errors {
+            NonStreamUrl(url: String) {
+                description("non-stream URL")
+                display("non-stream URL: '{}'", url)
+            }
+            UrlParse(url: String) {
+                description("failed to parse URL")
+                display("failed to parse URL: '{}'", url)
+            }
+        }
+    }
+}
+
+use errors::*;
 
 #[derive(Debug, PartialEq, Eq)]
 enum UrlKind {
@@ -34,7 +56,7 @@ pub enum StreamStatus {
 }
 
 impl fmt::Display for StreamStatus {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
         let s: &'static str = match self {
             StreamStatus::Offline => "offline",
             StreamStatus::Online => "online",
@@ -63,27 +85,19 @@ pub struct Stream {
     kind: UrlKind,
 }
 
-#[derive(Debug, PartialEq)]
-pub enum UrlError {
-    NonStream,
-    Malformed,
-}
-
-impl From<ParseError> for UrlError {
-    fn from(_e: ParseError) -> Self {
-        UrlError::Malformed
-    }
-}
-
 impl Stream {
-    pub fn from_url(url: Url) -> Result<Self, UrlError> {
+    pub fn from_url(url: Url) -> Result<Self> {
         let kind = UrlKind::from(&url);
         match kind {
-            UrlKind::Other => Err(UrlError::NonStream),
+            UrlKind::Other => bail!(ErrorKind::NonStreamUrl(url.as_str().into())),
             _ => Ok(Self { url, kind }),
         }
     }
 
+    pub fn from_string(s: String) -> Result<Self> {
+        let url: Url = Url::parse(s.as_str()).chain_err(|| ErrorKind::UrlParse(s))?;
+        Ok(Self::from_url(url)?)
+    }
     /// Returns the name (aka ID) of the stream.
     ///
     /// # Examples
@@ -132,7 +146,7 @@ impl Stream {
     /// # Errors
     ///
     /// If `youtube-dl` failed to execute, [`std::io::Error`] will be returned.
-    pub fn status(&self) -> Result<StreamStatus, io::Error> {
+    pub fn status(&self) -> Result<StreamStatus> {
         let status: ExitStatus = Command::new("youtube-dl")
             .args(&["-F", self.url.as_str()])
             .stdout(Stdio::null())
@@ -144,17 +158,6 @@ impl Stream {
             StreamStatus::Offline
         };
         Ok(status)
-    }
-}
-
-impl FromStr for Stream {
-    type Err = UrlError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match Url::parse(s) {
-            Ok(url) => Stream::from_url(url),
-            Err(_) => Err(UrlError::Malformed),
-        }
     }
 }
 
@@ -170,24 +173,27 @@ pub struct Streamlink {
 }
 
 impl Streamlink {
-    pub fn new(config: Config) -> Result<Self, UrlError> {
+    pub fn new(config: Config) -> Result<Self> {
         Ok(Self::from_strings(config.stream_urls)?)
     }
 
-    pub fn from_strs(strs: Vec<&str>) -> Result<Self, UrlError> {
+    pub fn from_strs(strs: Vec<&str>) -> Result<Self> {
         Self::from_strings(strs.into_iter().map(String::from).collect())
     }
 
-    pub fn from_strings(strings: Vec<String>) -> Result<Self, UrlError> {
-        let urls: Vec<Url> = strings
-            .into_iter()
-            .map(|s| Url::parse(s.as_str()).map_err(|_| UrlError::Malformed))
-            .map(|s| s.or_else(Err).unwrap())
-            .collect();
-        Ok(Self::from_urls(urls)?)
+    pub fn from_strings(strings: Vec<String>) -> Result<Self> {
+        let mut urls: Vec<Url> = vec![];
+        for string in strings {
+            let url = Url::parse(string.as_str());
+            match url {
+                Ok(url) => urls.push(url),
+                Err(_) => bail!(ErrorKind::UrlParse(string)),
+            }
+        }
+        Ok(Self::from_urls(urls).chain_err(|| "failed to create from urls")?)
     }
 
-    pub fn from_urls(urls: Vec<Url>) -> Result<Self, UrlError> {
+    pub fn from_urls(urls: Vec<Url>) -> Result<Self> {
         let urls: Vec<Stream> = urls
             .into_iter()
             .map(|u| Stream::from_url(u).or_else(Err).unwrap())
@@ -209,10 +215,10 @@ impl Streamlink {
     }
 }
 
-pub fn run<P: AsRef<Path>>(config_path: P) {
-    let config = Config::new(config_path).expect("error while reading config");
+pub fn run<P: AsRef<Path>>(config_path: P) -> Result<()> {
+    let config = Config::new(config_path).chain_err(|| "unable to create config")?;
     let progress_bar = ProgressBar::new(config.stream_urls.len() as u64);
-    let streamlink = Streamlink::new(config).unwrap();
+    let streamlink = Streamlink::new(config).chain_err(|| "unable to create streamlink")?;
     let status = streamlink.status();
     let lines: Vec<String> = status
         .map(|(stream, status)| {
@@ -231,6 +237,7 @@ pub fn run<P: AsRef<Path>>(config_path: P) {
     for line in lines {
         println!("{}", line);
     }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -250,29 +257,36 @@ mod tests {
         use super::constants;
         use *;
 
-        fn kind(s: &str) -> UrlKind {
-            UrlKind::from(&Url::parse(s).unwrap())
+        fn kind(s: String) -> UrlKind {
+            UrlKind::from(&Url::parse(s.as_str()).unwrap())
         }
 
         #[test]
         fn youtube() {
-            assert_eq!(UrlKind::Youtube, kind("https://youtube.com/markipliergame"));
+            assert_eq!(
+                UrlKind::Youtube,
+                kind(constants::YOUTUBE_MARKIPLIERGAME_USER.into())
+            );
+            assert_eq!(
+                UrlKind::Youtube,
+                kind(constants::YOUTUBE_MARKIPLIERGAME_DIRECT.into())
+            );
         }
 
         #[test]
         fn twitch() {
-            assert_eq!(UrlKind::Twitch, kind(constants::TWITCH_GOGCOM));
+            assert_eq!(UrlKind::Twitch, kind(constants::TWITCH_GOGCOM.into()));
         }
 
         #[test]
         fn other() {
-            assert_eq!(UrlKind::Other, kind("https://rust-lang.org"));
+            assert_eq!(UrlKind::Other, kind(constants::OTHER_VALID.into()));
         }
 
         #[test]
         #[should_panic]
         fn malformed() {
-            kind("this is not an URL");
+            kind("this is not an URL".into());
         }
     }
 
@@ -280,22 +294,21 @@ mod tests {
         use super::constants;
         use *;
 
-        pub fn stream_from_str(s: &str) -> Stream {
-            Stream::from_str(s).expect("wrong str")
+        pub fn stream_from_string(s: String) -> Stream {
+            Stream::from_url(Url::parse(s.as_str()).unwrap()).expect("wrong str")
         }
 
         #[test]
         fn from_right_url_str() {
             // `Stream` can be created from a correct URL str.
-            stream_from_str(constants::TWITCH_GOGCOM);
+            stream_from_string(constants::TWITCH_GOGCOM.into());
         }
 
         #[test]
         fn from_wrong_url_str() {
             // `Stream` can NOT be created from an incorrect URL str.
-            Stream::from_str(constants::WRONG_URL_STR).expect_err("right str");
-            Stream::from_str(&constants::TWITCH_GOGCOM.replace("https://", ""))
-                .expect_err("right str");
+            stream_from_string(constants::WRONG_URL_STR.into());
+            stream_from_string(constants::TWITCH_GOGCOM.replace("https://", ""));
         }
 
         mod name {
@@ -305,7 +318,9 @@ mod tests {
             fn twitch() {
                 assert_eq!(
                     "gogcom",
-                    stream_from_str(constants::TWITCH_GOGCOM).name().unwrap()
+                    stream_from_string(constants::TWITCH_GOGCOM.into())
+                        .name()
+                        .unwrap()
                 );
             }
 
@@ -313,7 +328,7 @@ mod tests {
             fn youtube_user() {
                 assert_eq!(
                     "markiplierGAME",
-                    stream_from_str(constants::YOUTUBE_MARKIPLIERGAME_USER)
+                    stream_from_string(constants::YOUTUBE_MARKIPLIERGAME_USER.into())
                         .name()
                         .unwrap()
                 );
@@ -323,7 +338,7 @@ mod tests {
             fn youtube_direct() {
                 assert_eq!(
                     "markiplierGAME",
-                    stream_from_str(constants::YOUTUBE_MARKIPLIERGAME_DIRECT)
+                    stream_from_string(constants::YOUTUBE_MARKIPLIERGAME_DIRECT.into())
                         .name()
                         .unwrap()
                 );
@@ -332,31 +347,33 @@ mod tests {
             #[test]
             #[should_panic]
             fn other() {
-                stream_from_str(constants::OTHER_VALID).name();
+                stream_from_string(constants::OTHER_VALID.into()).name();
             }
         }
     }
 
     mod status {
         use super::constants;
-        use super::stream::stream_from_str;
+        use super::stream::stream_from_string;
         use *;
 
-        pub fn status_from_str(s: &str) -> StreamStatus {
-            stream_from_str(s).status().expect("failed to get status")
+        pub fn status_from_str(s: String) -> StreamStatus {
+            stream_from_string(s)
+                .status()
+                .expect("failed to get status")
         }
 
         #[test]
         fn can_get() {
             // `Stream.status()` works for valid URL strs.
-            status_from_str(constants::TWITCH_GOGCOM);
+            status_from_str(constants::TWITCH_GOGCOM.into());
         }
 
         #[test]
         fn always_offline() {
             assert_eq!(
                 StreamStatus::Offline,
-                status_from_str(constants::ALWAYS_OFF_URL_STR)
+                status_from_str(constants::ALWAYS_OFF_URL_STR.into())
             );
         }
 
@@ -364,7 +381,7 @@ mod tests {
         fn always_online() {
             assert_eq!(
                 StreamStatus::Online,
-                status_from_str(constants::ALWAYS_ON_URL_STR)
+                status_from_str(constants::ALWAYS_ON_URL_STR.into())
             );
         }
     }

@@ -1,8 +1,9 @@
 use std::fs::File;
-use std::io;
 use std::io::prelude::*;
 use std::path::Path;
 use toml;
+
+use errors::*;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
@@ -10,7 +11,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new<P>(filepath: P) -> Result<Self, io::Error>
+    pub fn new<P>(filepath: P) -> Result<Self>
     where
         P: AsRef<Path>,
     {

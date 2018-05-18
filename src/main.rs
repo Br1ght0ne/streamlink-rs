@@ -4,8 +4,7 @@ extern crate streamlink;
 
 use clap::{App, Arg, SubCommand};
 use std::env;
-use std::path::Path;
-use std::process;
+use std::path::{Path, PathBuf};
 use streamlink::run;
 
 fn main() {
@@ -23,16 +22,26 @@ fn main() {
         )
         .get_matches();
 
-    let default_config_path = match env::home_dir() {
-        Some(pb) => pb.join(".config/streamlink-rs/config.toml"),
-        None => {
-            println!("failed to get home directory");
-            process::exit(2);
-        }
-    };
+    let default_config_path = env::home_dir()
+        .unwrap_or(PathBuf::new().join("/"))
+        .join(".config/streamlink-rs/config.toml");
     let config_path: &Path = match matches.value_of("config") {
         Some(path) => Path::new(path),
         None => default_config_path.as_path(),
     };
-    run(config_path);
+    if let Err(ref e) = run(config_path) {
+        println!("error: {}", e);
+
+        for e in e.iter().skip(1) {
+            println!("caused by: {}", e);
+        }
+
+        // The backtrace is not always generated. Try to run this example
+        // with `RUST_BACKTRACE=1`.
+        if let Some(backtrace) = e.backtrace() {
+            println!("backtrace: {:?}", backtrace);
+        }
+
+        ::std::process::exit(1);
+    }
 }
