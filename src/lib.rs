@@ -305,6 +305,7 @@ mod tests {
         }
 
         #[test]
+        #[should_panic]
         fn from_wrong_url_str() {
             // `Stream` can NOT be created from an incorrect URL str.
             stream_from_string(constants::WRONG_URL_STR.into());
