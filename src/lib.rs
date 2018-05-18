@@ -106,10 +106,10 @@ impl Stream {
     /// use streamlink::Stream;
     /// use std::str::FromStr;
     ///
-    /// let stream = Stream::from_str("https://twitch.tv/gogcom").unwrap();
+    /// let stream = Stream::from_string("https://twitch.tv/gogcom".into()).unwrap();
     /// assert_eq!("gogcom", stream.name().unwrap());
     ///
-    /// let stream = Stream::from_str("https://youtube.com/user/markiplierGAME").unwrap();
+    /// let stream = Stream::from_string("https://youtube.com/user/markiplierGAME".into()).unwrap();
     /// assert_eq!("markiplierGAME", stream.name().unwrap());
     /// ```
     pub fn name(&self) -> Option<&str> {
@@ -134,12 +134,11 @@ impl Stream {
     ///
     /// ```rust
     /// use streamlink::{Stream, StreamStatus};
-    /// use std::str::FromStr;
     ///
-    /// let online_stream_url = Stream::from_str("https://twitch.tv/food").unwrap();
+    /// let online_stream_url = Stream::from_string("https://twitch.tv/food".into()).unwrap();
     /// assert_eq!(StreamStatus::Online, online_stream_url.status().unwrap());
     ///
-    /// let offline_stream_url = Stream::from_str("https://twitch.tv/some_offline_stream").unwrap();
+    /// let offline_stream_url = Stream::from_string("https://twitch.tv/some_offline_stream".into()).unwrap();
     /// assert_eq!(StreamStatus::Offline, offline_stream_url.status().unwrap());
     /// ```
     ///
@@ -305,6 +304,7 @@ mod tests {
         }
 
         #[test]
+        #[should_panic]
         fn from_wrong_url_str() {
             // `Stream` can NOT be created from an incorrect URL str.
             stream_from_string(constants::WRONG_URL_STR.into());
