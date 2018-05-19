@@ -23,8 +23,13 @@ serde_derive = "1.0.55"
 toml = "0.4"
 url = "1.7.0"
 
+[[bin]]
+name = "streamlink-rs"
+path = "src/main.rs"
+
 [badges]
 travis-ci = { repository = "filalex77/streamlink-rs" }
 
 [package.metadata.docs.rs]
 all-features = true
+
