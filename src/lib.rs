@@ -247,7 +247,7 @@ mod tests {
         pub const YOUTUBE_MARKIPLIERGAME_DIRECT: &str = "https://youtube.com/markiplierGAME";
         pub const OTHER_VALID: &str = "https://rust-lang.org/about";
         pub const ALWAYS_OFF_URL_STR: &str = "https://twitch.tv/NotRealBrightOneLOL";
-        pub const ALWAYS_ON_URL_STR: &str = "https://twitch.tv/food";
+        pub const ALWAYS_ON_URL_STR: &str = "https://twitch.tv/monstercat";
         pub const WRONG_URL_STR: &str = "wrong://fake.tv/thisdefinitelydoesntexist";
     }
 
