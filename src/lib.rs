@@ -1,5 +1,5 @@
 #![recursion_limit = "1024"]
-extern crate console;
+extern crate ansi_term;
 #[macro_use]
 extern crate error_chain;
 extern crate indicatif;
@@ -9,7 +9,7 @@ extern crate serde_derive;
 extern crate toml;
 extern crate url;
 
-use console::style;
+use ansi_term::Colour::{Green, Red};
 use indicatif::ProgressBar;
 use std::fmt;
 use std::path::Path;
@@ -225,8 +225,8 @@ pub fn run<P: AsRef<Path>>(config_path: P) -> Result<()> {
                 "{} is {}",
                 stream.name().unwrap_or_else(|| stream.url.as_str()),
                 match status {
-                    StreamStatus::Offline => style(status).red(),
-                    StreamStatus::Online => style(status).green(),
+                    StreamStatus::Offline => Red.paint(format!("{}", status)),
+                    StreamStatus::Online => Green.paint(format!("{}", status)),
                 }
             )
         })
