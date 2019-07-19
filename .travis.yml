@@ -1,11 +1,12 @@
 language: rust
-rust: nightly
+rust:
+  - stable
+  - nightly
 cache: cargo
 install:
   - sudo pip install youtube-dl
 matrix:
   allow_failures:
     - rust:
-        - beta
-        - stable
+        - nightly
   fast_finish: true
