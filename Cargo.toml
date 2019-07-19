@@ -13,15 +13,18 @@ Rust API (kinda) for the streamlink utility.
 keywords = ["streamlink", "youtube", "twitch"]
 categories = ["api-bindings"]
 
+[package.metadata.docs.rs]
+all-features = true
+
 [dependencies]
-clap = "2.31"
-console = "0.6.1"
-error-chain = "0.11.0"
-indicatif = "0.9.0"
-serde = "1.0.55"
-serde_derive = "1.0.55"
-toml = "0.4"
-url = "1.7.0"
+ansi_term = "0.12"
+clap = "2.33.0"
+error-chain = "0.12.1"
+indicatif = "0.11.0"
+serde = "1.0.97"
+serde_derive = "1.0.97"
+toml = "0.5.1"
+url = "1.7.2"
 
 [[bin]]
 name = "streamlink-rs"
@@ -29,7 +32,4 @@ path = "src/main.rs"
 
 [badges]
 travis-ci = { repository = "filalex77/streamlink-rs" }
-
-[package.metadata.docs.rs]
-all-features = true
 
