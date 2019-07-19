@@ -134,7 +134,7 @@ impl Stream {
     /// ```rust
     /// use streamlink::{Stream, StreamStatus};
     ///
-    /// let online_stream_url = Stream::from_string("https://twitch.tv/food".into()).unwrap();
+    /// let online_stream_url = Stream::from_string("https://twitch.tv/monstercat".into()).unwrap();
     /// assert_eq!(StreamStatus::Online, online_stream_url.status().unwrap());
     ///
     /// let offline_stream_url = Stream::from_string("https://twitch.tv/some_offline_stream".into()).unwrap();
