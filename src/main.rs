@@ -1,9 +1,9 @@
 #[macro_use]
 extern crate clap;
+extern crate dirs;
 extern crate streamlink;
 
 use clap::{App, Arg, SubCommand};
-use std::env;
 use std::path::{Path, PathBuf};
 use streamlink::run;
 
@@ -22,7 +22,7 @@ fn main() {
         )
         .get_matches();
 
-    let default_config_path = env::home_dir()
+    let default_config_path = dirs::home_dir()
         .unwrap_or(PathBuf::new().join("/"))
         .join(".config/streamlink-rs/config.toml");
     let config_path: &Path = match matches.value_of("config") {

@@ -1,5 +1,4 @@
 #![recursion_limit = "1024"]
-#![feature(conservative_impl_trait)]
 extern crate console;
 #[macro_use]
 extern crate error_chain;
